@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 
 # In utils/sensor_utils.py
@@ -42,3 +43,46 @@ def lidar_callback(point_cloud, data_dict):
     else:
         # Nessun punto rilevato davanti, impostiamo la distanza a infinito
         data_dict['distance'] = float('inf')
+
+
+def radar_callback(radar_data, data_dict, ego_vehicle):
+    """
+    Callback function for the radar sensor.
+    Processes radar data to calculate Time to Collision (TTC).
+    """
+    # Get ego vehicle velocity
+    ego_velocity = ego_vehicle.get_velocity()
+    ego_speed = math.sqrt(ego_velocity.x ** 2 + ego_velocity.y ** 2 + ego_velocity.z ** 2)
+
+    # Process radar detections
+    detections = []
+    min_ttc = float('inf')
+
+    # Pre-filter detections for efficiency
+    for detection in radar_data:
+        # Only consider detections in front of the vehicle
+        if detection.azimuth < -90 or detection.azimuth > 90:
+            continue
+
+        # Get detection information
+        distance = detection.depth
+        relative_velocity = detection.velocity
+
+        # Calculate closing speed (positive when approaching)
+        closing_speed = -relative_velocity  # Negative because radar velocity is positive when approaching
+
+        if closing_speed > 0.1:  # Only calculate TTC if objects are approaching significantly
+            ttc = distance / closing_speed
+            min_ttc = min(min_ttc, ttc)
+
+            # Store detection information
+            detections.append({
+                'distance': distance,
+                'relative_velocity': relative_velocity,
+                'ttc': ttc,
+                'azimuth': detection.azimuth
+            })
+
+    # Update the data dictionary
+    data_dict['detections'] = detections
+    data_dict['min_ttc'] = min_ttc
