@@ -22,7 +22,7 @@ def main():
         ego_waypoint = carla_map.get_waypoint(ego_vehicle.get_location())
 
         # Get the next waypoint 10 meters down the road
-        next_waypoint = ego_waypoint.next(10.0)[0]  # The [0] is important to get the first waypoint from the list
+        next_waypoint = ego_waypoint.next(20.0)[0]  # The [0] is important to get the first waypoint from the list
 
         # Add a small vertical offset to prevent spawning into the ground
         target_spawn_point = carla.Transform(
@@ -47,7 +47,7 @@ def main():
 
         detection_counter = 0
         while True:
-            manager.world.tick()
+           #manager.world.tick()
 
 
             ego_transform = ego_vehicle.get_transform()
@@ -65,16 +65,15 @@ def main():
                 ego_vehicle.apply_control(control)
                 print(f"OBSTACLE DETECTED! TTC: {current_ttc:.2f}s! BRAKING ACTIVATED")
             else:
-                control = carla.VehicleControl(throttle=0.5, brake=0.0, steer=0.0)
+                control = carla.VehicleControl(throttle=1.0, brake=0.0, steer=0.0)
                 ego_vehicle.apply_control(control)
 
-                if detection_counter > 0:
-                    print(
-                        f"Possible detection ({detection_counter}/{config.STABLE_DETECTION_THRESHOLD}) - TTC: {current_ttc:.2f}s")
-                else:
-                    print(f"No obstacle detected - TTC: {current_ttc:.2f}s")
+                #if detection_counter > 0:
+                #    print(f"Possible detection ({detection_counter}/{config.STABLE_DETECTION_THRESHOLD}) - TTC: {current_ttc:.2f}s")
+                #else:
+                #    print(f"No obstacle detected - TTC: {current_ttc:.2f}s")
 
-            time.sleep(0.1)
+            time.sleep(0.02)
 
 
 if __name__ == '__main__':
