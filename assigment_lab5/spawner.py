@@ -13,7 +13,7 @@ class Spawner:
         self.blueprint_library = self.world.get_blueprint_library()
 
 
-    def spawn_veichles(self, model, spawn_point=None, autopilot=False):
+    def spawn_vehicle(self, model, spawn_point=None, autopilot=False):
         """Spawn veichles according to the model at a specific random point
 
         Returns:

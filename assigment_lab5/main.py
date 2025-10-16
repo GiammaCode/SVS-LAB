@@ -10,19 +10,26 @@ def main():
     #shared dictionary
     radar_data = {'min_ttc': float('inf')}
 
-    with CarlaManager as manager:
+    with CarlaManager() as manager:
         spawner = Spawner(manager.world, manager.actor_list)
 
         #Spaning section
-        ego_vehicle = spawner.spawn_veichles(config.EGO_VEHICLE_MODEL)
+        ego_vehicle = spawner.spawn_vehicle(config.EGO_VEHICLE_MODEL)
         if not ego_vehicle: return
 
         # Spawn a target vehicle 10 meters in front of the ego vehicle
-        ego_transform = ego_vehicle.get_transform()
+        carla_map = manager.world.get_map()
+        ego_waypoint = carla_map.get_waypoint(ego_vehicle.get_location())
+
+        # Get the next waypoint 10 meters down the road
+        next_waypoint = ego_waypoint.next(10.0)[0]  # The [0] is important to get the first waypoint from the list
+
+        # Add a small vertical offset to prevent spawning into the ground
         target_spawn_point = carla.Transform(
-            ego_transform.location + carla.Location(x=10),
-            ego_transform.rotation
+            next_waypoint.transform.location + carla.Location(z=0.1),
+            next_waypoint.transform.rotation
         )
+
         target_vehicle = spawner.spawn_vehicle(config.TARGET_VEHICLE_MODEL, spawn_point=target_spawn_point)
         if not target_vehicle: return
 
@@ -42,12 +49,10 @@ def main():
         while True:
             manager.world.tick()
 
-            # Keep spectator camera behind the ego vehicle
+
             ego_transform = ego_vehicle.get_transform()
-            spectator.set_transform(carla.Transform(
-                ego_transform.location + carla.Location(x=-8, z=3),
-                ego_transform.rotation
-            ))
+            spectator_location = ego_transform.transform(carla.Location(x=-8, z=3))
+            spectator.set_transform(carla.Transform(spectator_location, ego_transform.rotation))
 
             current_ttc = radar_data['min_ttc']
             if current_ttc < config.TTC_THRESHOLD:
